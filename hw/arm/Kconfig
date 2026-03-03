@@ -43,6 +43,11 @@ config CUBIEBOARD
     depends on TCG && ARM
     select ALLWINNER_A10
 
+config AARCH64_MULTI_RAM
+    bool
+    default y
+    depends on TCG && AARCH64
+
 config DIGIC
     bool
     default y
