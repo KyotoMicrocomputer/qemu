@@ -264,7 +264,51 @@ static int arm_gdb_get_sysreg(CPUState *cs, GByteArray *buf, int reg)
 
 static int arm_gdb_set_sysreg(CPUState *cs, uint8_t *buf, int reg)
 {
-    return 0;
+    ARMCPU *cpu = ARM_CPU(cs);
+    CPUARMState *env = &cpu->env;
+    const ARMCPRegInfo *ri;
+    uint32_t key;
+    uint64_t val;
+    int len;
+
+    key = cpu->dyn_sysreg_feature.data.cpregs.keys[reg];
+    ri = get_arm_cp_reginfo(cpu->cp_regs, key);
+    if (!ri) {
+        return 0;
+    }
+
+    switch (cpreg_field_type(ri)) {
+    case MO_64:
+        len = 8;
+        val = ldq_p(buf);
+        break;
+    case MO_32:
+        len = 4;
+        val = ldl_p(buf);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    if (ri->vhe_redir_to_el2 &&
+        (arm_hcr_el2_eff(env) & HCR_E2H) &&
+        arm_current_el(env) == 2) {
+        ri = get_arm_cp_reginfo(cpu->cp_regs, ri->vhe_redir_to_el2);
+    } else if (ri->vhe_redir_to_el01) {
+        ri = get_arm_cp_reginfo(cpu->cp_regs, ri->vhe_redir_to_el01);
+    }
+
+    if (!ri) {
+        return 0;
+    }
+
+    if (ri->writefn) {
+        ri->writefn(env, ri, val);
+    } else {
+        raw_write(env, ri, val);
+    }
+
+    return len;
 }
 
 static void arm_gen_one_feature_sysreg(GDBFeatureBuilder *builder,
