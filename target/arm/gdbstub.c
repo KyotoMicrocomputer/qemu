@@ -19,6 +19,7 @@
  */
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "exec/cputlb.h"
 #include "exec/gdbstub.h"
 #include "gdbstub/helpers.h"
 #include "gdbstub/commands.h"
@@ -307,6 +308,7 @@ static int arm_gdb_set_sysreg(CPUState *cs, uint8_t *buf, int reg)
     } else {
         raw_write(env, ri, val);
     }
+    tlb_flush(cs);
 
     return len;
 }

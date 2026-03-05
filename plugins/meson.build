@@ -86,3 +86,8 @@ system_ss.add(files('api.c', 'core.c'))
 
 common_ss.add(files('loader.c'))
 
+plugin_modules += shared_module(
+  'qemu-pc-sampler',
+  files('qemu_pc_sampler_plugin.c'),
+  dependencies: plugins_deps,
+)
